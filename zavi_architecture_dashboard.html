@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zavi — 0 to 100% Repository Architecture & Visual Explorer</title>
+  <style>
+    :root {
+      --bg: #0B0F17;
+      --card: #151D2A;
+      --card-border: #243044;
+      --primary: #38BDF8;
+      --accent-purple: #A855F7;
+      --accent-green: #34D399;
+      --accent-amber: #FBBF24;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --dim: #64748B;
+      --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 30px;
+    }
+    header {
+      background: linear-gradient(135deg, #1E293B, #0F172A);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-right: 8px;
+    }
+    .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid #38BDF8; }
+    .badge-purple { background: rgba(168, 85, 247, 0.15); color: #C084FC; border: 1px solid #A855F7; }
+    .badge-green { background: rgba(52, 211, 153, 0.15); color: #34D399; border: 1px solid #10B981; }
+    .badge-amber { background: rgba(251, 191, 36, 0.15); color: #FBBF24; border: 1px solid #F59E0B; }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .stat-card {
+      background: #0B0F17;
+      border: 1px solid #1E293B;
+      padding: 16px 20px;
+      border-radius: 12px;
+    }
+    .stat-card .val {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .stat-card .lbl {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .view-switcher {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      background: #1E293B;
+      color: var(--muted);
+      border: 1px solid var(--card-border);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #0B0F17;
+      border-color: var(--primary);
+    }
+
+    .image-preview-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    .image-container {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #1E293B;
+      background: #000;
+    }
+    .image-container img, .image-container object {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .grid-3col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    @media (max-width: 1200px) {
+      .grid-3col { grid-template-columns: 1fr; }
+    }
+
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .section-card h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .module-item {
+      background: #0B0F17;
+      border: 1px solid #1E293B;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .module-item h3 {
+      font-size: 16px;
+      color: #E2E8F0;
+      margin-bottom: 6px;
+      font-family: var(--font-mono);
+    }
+    .module-item p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pill {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      background: #1E293B;
+      color: #7DD3FC;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <span class="badge badge-blue">Monorepo v0.2.0</span>
+      <span class="badge badge-purple">Enterprise Multi-Agent OS</span>
+      <span class="badge badge-green">15,900+ Files</span>
+      <span class="badge badge-amber">100% Architecture Index</span>
+    </div>
+    <h1 style="font-size: 36px; margin: 12px 0 6px 0; font-weight: 900;">ZAVI REPOSITORY ARCHITECTURE MAP</h1>
+    <p style="color: var(--muted); font-size: 16px;">
+      Root Workspace: <code>/Users/vbi/Desktop/zavi-development</code> &bull; Complete structural dissection of every app, package, microservice, agent persona, and edge infrastructure layer.
+    </p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="val">15,900+</div>
+        <div class="lbl">Total Files</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color: #818CF8;">10,675</div>
+        <div class="lbl">TypeScript (.ts)</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color: #F472B6;">2,868</div>
+        <div class="lbl">React TSX (.tsx)</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color: #34D399;">1,321</div>
+        <div class="lbl">Supabase Migrations</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color: #FBBF24;">139</div>
+        <div class="lbl">Backend Services</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color: #38BDF8;">24 / 249</div>
+        <div class="lbl">AI Swarms / Workers</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Vector Graphic Embed -->
+  <div class="image-preview-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div>
+        <h2 style="font-size: 22px; font-weight: 800;">1. Master Vector Architecture Infographic (SVG)</h2>
+        <p style="color: var(--muted); font-size: 14px;">Resolution: 3800 &times; 2800 px &bull; Infinitely scalable vector graphics displaying 100% of all components.</p>
+      </div>
+      <a href="zavi_full_architecture_0_to_100.svg" target="_blank" style="background: var(--primary); color: #0B0F17; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 14px;">Open Full SVG &nearr;</a>
+    </div>
+    <div class="image-container">
+      <object data="zavi_full_architecture_0_to_100.svg" type="image/svg+xml"></object>
+    </div>
+  </div>
+
+  <!-- 3D Isometric Illustration Embed -->
+  <div class="image-preview-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div>
+        <h2 style="font-size: 22px; font-weight: 800;">2. 3D Isometric Conceptual Overview (Render)</h2>
+        <p style="color: var(--muted); font-size: 14px;">Futuristic 3D visualization showcasing the central AI Brain Orchestrator connected to the 7 delivery pillars.</p>
+      </div>
+      <a href="zavi_architecture_3d_overview.jpg" target="_blank" style="background: #A855F7; color: #FFFFFF; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 14px;">Open 3D JPG &nearr;</a>
+    </div>
+    <div class="image-container">
+      <img src="zavi_architecture_3d_overview.jpg" alt="Zavi 3D Isometric Architecture">
+    </div>
+  </div>
+
+  <!-- Detailed 3-Column Breakdown -->
+  <div class="grid-3col">
+    <!-- COL 1 -->
+    <div class="section-card">
+      <h2 style="color: #38BDF8;">🖥️ Layer 1: Client Surfaces (apps/*)</h2>
+
+      <div class="module-item">
+        <h3>apps/web (Port 3000)</h3>
+        <p>Flagship web app with chat canvas, task board, SSE streaming, and agent collaboration.</p>
+        <div class="pill-list">
+          <span class="pill">Next.js 15.5</span>
+          <span class="pill">React 19.2</span>
+          <span class="pill">CopilotKit 1.70</span>
+          <span class="pill">Tailwind 3.4</span>
+          <span class="pill">dnd-kit</span>
+          <span class="pill">Playwright</span>
+          <span class="pill">MCP SDK</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/admin (Port 3002)</h3>
+        <p>Tenant administration console, tenant scanning, user governance, and security audit logs.</p>
+        <div class="pill-list">
+          <span class="pill">Next.js 15</span>
+          <span class="pill">Radix UI</span>
+          <span class="pill">@supabase/ssr</span>
+          <span class="pill">Vitest</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/mobile (iOS &amp; Android)</h3>
+        <p>Native mobile client for push notifications, voice dispatches, and approval workflows.</p>
+        <div class="pill-list">
+          <span class="pill">Expo SDK 52</span>
+          <span class="pill">React Native</span>
+          <span class="pill">Firebase Crashlytics</span>
+          <span class="pill">TanStack Query</span>
+          <span class="pill">PostHog</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/extension (Chrome)</h3>
+        <p>Manifest V3 browser side-panel co-browsing and real-time context ingestion.</p>
+        <div class="pill-list">
+          <span class="pill">React 19</span>
+          <span class="pill">esbuild</span>
+          <span class="pill">SidePanel API</span>
+          <span class="pill">Supabase JS</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/teams-app-package</h3>
+        <p>Microsoft Teams app store package, bot definitions, and wireframe prototypes.</p>
+        <div class="pill-list">
+          <span class="pill">manifest.json</span>
+          <span class="pill">Partner Center</span>
+          <span class="pill">superagent-nav</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 2 -->
+    <div class="section-card">
+      <h2 style="color: #C084FC;">🧠 Layer 2: AI Brain &amp; Backend</h2>
+
+      <div class="module-item">
+        <h3>apps/agent-runtime &amp; voice</h3>
+        <p>Python 3.12 Deep Agents foundation and LiveKit ultra-low latency voice daemon.</p>
+        <div class="pill-list">
+          <span class="pill">deepagents 0.7.8</span>
+          <span class="pill">langchain 1.3</span>
+          <span class="pill">langgraph 1.2</span>
+          <span class="pill">LiveKit 1.5.3</span>
+          <span class="pill">Deepgram STT</span>
+          <span class="pill">Cartesia TTS</span>
+          <span class="pill">Silero VAD</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/backend/src/agents (24 Roles)</h3>
+        <p>Specialized autonomous AI agents: chief-of-staff, cgo, pm, engineer, qa, growth-lead, etc.</p>
+        <div class="pill-list">
+          <span class="pill">Claude Agent SDK</span>
+          <span class="pill">Anthropic 0.93</span>
+          <span class="pill">Fireworks AI</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/backend (66 Routes &amp; 139 Services)</h3>
+        <p>Express server powering account, chat, billing, memory, email, and social ad modules.</p>
+        <div class="pill-list">
+          <span class="pill">66 Route Groups</span>
+          <span class="pill">139 Microservices</span>
+          <span class="pill">PGlite</span>
+          <span class="pill">AWS DynamoDB</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/backend/workers (249 Jobs)</h3>
+        <p>Inngest serverless event workers for long-running workflows, retries, and cron routines.</p>
+        <div class="pill-list">
+          <span class="pill">249 Functions</span>
+          <span class="pill">background-brake.ts</span>
+          <span class="pill">Inngest Client</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 3 -->
+    <div class="section-card">
+      <h2 style="color: #34D399;">🗄️ Layer 3: Data, Infra &amp; DevOps</h2>
+
+      <div class="module-item">
+        <h3>supabase/ (1,321 Migrations)</h3>
+        <p>PostgreSQL multi-tenant database with strict Row Level Security (RLS) policies and vectors.</p>
+        <div class="pill-list">
+          <span class="pill">PostgreSQL</span>
+          <span class="pill">1,321 Migrations</span>
+          <span class="pill">RLS Policies</span>
+          <span class="pill">pgvector</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>packages/*</h3>
+        <p>Monorepo shared schemas (@zavi/shared) and Remotion 4.0 motion-graphics launch-video engine.</p>
+        <div class="pill-list">
+          <span class="pill">@zavi/shared</span>
+          <span class="pill">db-guard</span>
+          <span class="pill">Remotion 4.0</span>
+          <span class="pill">React 19 Video</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>apps/connector &amp; Integrations</h3>
+        <p>On-premise customer database bridge (Postgres, MySQL, Mongo) and official Shopify App.</p>
+        <div class="pill-list">
+          <span class="pill">shopify.app.toml</span>
+          <span class="pill">MongoDB BSON</span>
+          <span class="pill">Reddit/TikTok Ads</span>
+        </div>
+      </div>
+
+      <div class="module-item">
+        <h3>infra/* &amp; Cloudflare Edge</h3>
+        <p>Cloudflare Workers site-functions &amp; gateway signer, Nginx reverse proxy, and AWS Amplify CI/CD.</p>
+        <div class="pill-list">
+          <span class="pill">Wrangler</span>
+          <span class="pill">HMAC Signer</span>
+          <span class="pill">Nginx HTTP/2</span>
+          <span class="pill">Amplify CI/CD</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
